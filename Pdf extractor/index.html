@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Text Extractor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #eff6ff, #e0e7ff);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 42rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #374151;
+            margin-bottom: 1rem;
+            text-align: center;
+            background-image: linear-gradient(to right, #2563eb, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .input-group {
+            width: 100%;
+        }
+
+        .label {
+            display: block;
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #4b5563;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-input {
+            display: block;
+            width: 100%;
+            font-size: 0.875rem;
+            color: #111827;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            background-color: #f9fafb;
+            outline: none;
+        }
+        .file-input::-webkit-file-upload-button {
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0; 
+            border: 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            cursor: pointer;
+        }
+        .file-input:hover::-webkit-file-upload-button {
+            background-color: #dbeafe;
+        }
+        .file-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background-color: #2563eb;
+            color: #fff;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease-in-out;
+            transform: scale(1);
+        }
+        .btn:hover {
+            background-color: #1d4ed8;
+            transform: scale(1.01);
+        }
+        .btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.5);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #2563eb;
+        }
+        .loading-indicator.hidden {
+            display: none;
+        }
+        .loading-indicator svg {
+            animation: spin 1s linear infinite;
+            height: 1.25rem;
+            width: 1.25rem;
+            color: #3b82f6;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .textarea-group {
+            width: 100%;
+        }
+
+        .textarea-output {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            color: #1f2937;
+            outline: none;
+            resize: vertical;
+        }
+        .textarea-output:focus {
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+
+        .message-box {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+        .message-box.hidden {
+            display: none;
+        }
+        .message-box.success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .message-box.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .message-box.info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">PDF Text Extractor</h1>
+
+        <div class="input-group">
+            <label for="pdfInput" class="label">Select a PDF File:</label>
+            <input 
+                type="file" 
+                id="pdfInput" 
+                accept=".pdf" 
+                class="file-input"
+            >
+        </div>
+
+        <button id="extractButton" class="btn">Extract Text</button>
+
+        <div id="loadingIndicator" class="loading-indicator hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Extracting text...</span>
+        </div>
+
+        <div class="textarea-group">
+            <label for="extractedText" class="label">Extracted Text:</label>
+            <textarea 
+                id="extractedText" 
+                rows="15" 
+                readonly 
+                placeholder="Extracted text will appear here..." 
+                class="textarea-output"
+            ></textarea>
+        </div>
+
+        <div id="messageBox" class="message-box hidden" role="alert"></div>
+    </div>
+
+    <script>
+        // DOM element references
+        const pdfInput = document.getElementById('pdfInput');
+        const extractButton = document.getElementById('extractButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const extractedText = document.getElementById('extractedText');
+        const messageBox = document.getElementById('messageBox');
+
+        // Backend API URL
+        const API_URL = 'http://127.0.0.1:5000/extract_pdf';
+
+        // Displays a message to the user
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`;
+            messageBox.classList.remove('hidden');
+        }
+
+        // Hides the message box
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+            messageBox.textContent = '';
+        }
+
+        // Sends PDF to backend for extraction
+        async function extractPdfText(pdfFile) {
+            const formData = new FormData();
+            formData.append('pdf_file', pdfFile);
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                return data.extracted_text;
+            } else {
+                throw new Error(data.error || 'Unknown error from server');
+            }
+        }
+
+        // Event listener for extract button click
+        extractButton.addEventListener('click', async () => {
+            hideMessage();
+            extractedText.value = '';
+
+            const file = pdfInput.files[0];
+
+            if (!file) {
+                showMessage('Please select a PDF file first.', 'info');
+                return;
+            }
+
+            if (file.type !== 'application/pdf') {
+                showMessage('Please select a valid PDF file (.pdf).', 'error');
+                pdfInput.value = '';
+                return;
+            }
+
+            // Show loading and disable elements
+            loadingIndicator.classList.remove('hidden');
+            extractButton.disabled = true;
+            pdfInput.disabled = true;
+
+            try {
+                const text = await extractPdfText(file);
+                extractedText.value = text;
+                showMessage('Text extracted successfully!', 'success');
+            } catch (error) {
+                console.error('Extraction error:', error);
+                showMessage(`Extraction failed: ${error.message || 'Network error.'}`, 'error');
+                extractedText.value = 'Failed to extract text. See console for details.';
+            } finally {
+                // Hide loading and re-enable elements
+                loadingIndicator.classList.add('hidden');
+                extractButton.disabled = false;
+                pdfInput.disabled = false;
+            }
+        });
+
+        // Clear message when new file is selected
+        pdfInput.addEventListener('change', () => {
+            hideMessage();
+            extractedText.value = '';
+        });
+    </script>
+</body>
+</html>
